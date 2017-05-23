@@ -51,6 +51,7 @@
 #include <unistd.h>
 #endif
 #include <ctype.h>
+#include <iostream>
 
 #include "mpq.h"
 #include "huff.h"
@@ -577,6 +578,11 @@ int CMpq::ExtractTo(unsigned char *mpqbuf, UInt32 entry, FILE *fpMpq)
 						ExtWavUnp3((UIntPtr) read_buffer,
 						(UIntPtr) length_read, (UIntPtr) write_buffer,
 						0x1000);
+				}
+				if (length_read > 0x1000) {
+					std::cout << "Warning file: " << this->FilenameTable+(entry * PATH_MAX) << '\n';
+					std::cout << "read size:" << length_read << " bytes at block: ";
+					std::cout << j << " metod found: '" << std::hex << (uint8_t)metod << "'" << std::endl;
 				}
 				memcpy(mpqptr, write_buffer, length_read);
 				mpqptr += length_read;
