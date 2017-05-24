@@ -483,6 +483,7 @@ int CMpq::ExtractTo(unsigned char *mpqbuf, UInt32 entry, FILE *fpMpq)
 	ldiv_t divres;
 	params param;
 	unsigned char *mpqptr;
+	bool print_reads = (entry == 1809);
 
 	mpqptr = mpqbuf;
 
@@ -518,6 +519,8 @@ int CMpq::ExtractTo(unsigned char *mpqbuf, UInt32 entry, FILE *fpMpq)
 		read_buffer = read_buffer_start;
 		for (j = 0; j < (num_block - 1); j++) {
 			length_read = *(file_header + j + 1) - *(file_header + j);		// . get length of block to read
+			if (print_reads)
+			    std::cout << "block #" << j << " read size set: "<< length_read << '\n';
 			if (fread(read_buffer, sizeof(char), length_read, fpMpq) == 0)		// . read block
 				return 1;
 			if (flag & 0x30000) {
@@ -539,6 +542,8 @@ int CMpq::ExtractTo(unsigned char *mpqbuf, UInt32 entry, FILE *fpMpq)
 					}
 					read_buffer += 1;
 					length_read -= 1;
+					if (print_reads)
+						std::cout << "block #" << j << " read size set: "<< length_read << " flag 0x200\n";
 				} else {				// . Else: file is from Diablo I MPQ, then
 					iteration = 1;
 					metod = 8;				// . .file is compressed with DCL
@@ -550,6 +555,8 @@ int CMpq::ExtractTo(unsigned char *mpqbuf, UInt32 entry, FILE *fpMpq)
 					length_write = 0;
 					explode(&param);
 					length_read = length_write;
+					if (print_reads)
+						std::cout << "block #" << j << " read size set: "<< length_read << " metod 0x08\n";
 					if (length_read > 0x1000) {
 						std::cout << "Warning file: " << this->FilenameTable+(entry * PATH_MAX) << '\n';
 						std::cout << "read size:" << length_read << " bytes at block: ";
@@ -566,6 +573,8 @@ int CMpq::ExtractTo(unsigned char *mpqbuf, UInt32 entry, FILE *fpMpq)
 						ExtWavUnp1((UIntPtr) read_buffer,
 						(UIntPtr) length_read, (UIntPtr) write_buffer,
 						0x1000);
+					if (print_reads)
+						std::cout << "block #" << j << " read size set: "<< length_read << " metod 0x01\n";
 					iteration--;
 					if (iteration) {
 						read_buffer = write_buffer;
@@ -577,12 +586,16 @@ int CMpq::ExtractTo(unsigned char *mpqbuf, UInt32 entry, FILE *fpMpq)
 						ExtWavUnp2((UIntPtr) read_buffer,
 						(UIntPtr) length_read, (UIntPtr) write_buffer,
 						0x1000);
+					if (print_reads)
+						std::cout << "block #" << j << " read size set: "<< length_read << " metod 0x40\n";
 				}
 				if (metod & 0x80) { // Stereo ADPCM Wave
 					length_read =
 						ExtWavUnp3((UIntPtr) read_buffer,
 						(UIntPtr) length_read, (UIntPtr) write_buffer,
 						0x1000);
+					if (print_reads)
+						std::cout << "block #" << j << " read size set: "<< length_read << " metod 0x80\n";
 				}
 				memcpy(mpqptr, write_buffer, length_read);
 				mpqptr += length_read;
@@ -597,11 +610,17 @@ int CMpq::ExtractTo(unsigned char *mpqbuf, UInt32 entry, FILE *fpMpq)
 		size_pack = *(BlockTable + entry * 4 + 1);		// get size  of file
 		if (flag & 0x30000) {
 			length_read = 0x1000;		// if file is coded, length_read=0x1000 (4 KB)
+			if (print_reads)
+				std::cout << "block #" << j << " read size set: "<< length_read << " flag 0x30000\n";
 		} else {
 			length_read = 0x60000;		// if file is not coded, length_read=0x60000 (384KB)
+			if (print_reads)
+				std::cout << "block #" << j << " read size set: "<< length_read << " flag 0x60000\n";
 		}
 		if (size_pack < length_read) {
 			length_read = size_pack;		// if size of file < length_read, length read = size of file
+			if (print_reads)
+				std::cout << "block #" << j << " read size set: "<< length_read << " gt size_pack\n";
 		}
 		read_buffer = read_buffer_start;
 		if (length_read) {
